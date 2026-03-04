@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pacientes - Clínica Dental</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <a href="index.html">🦷 Clínica Dental</a>
+    <h2>🧑‍🤝‍🧑 Gestión de Pacientes</h2>
+  </header>
+
+  <h1>Pacientes</h1>
+
+  <!-- Formulario -->
+  <div class="form-container">
+    <h3 id="form-title">Nuevo Paciente</h3>
+    <input type="hidden" id="paciente-id">
+    <label>DNI</label>
+    <input type="text" id="dni" placeholder="DNI">
+    <label>Nombre</label>
+    <input type="text" id="nombre" placeholder="Nombre">
+    <label>Apellidos</label>
+    <input type="text" id="apellidos" placeholder="Apellidos">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="Email">
+    <label>Teléfono</label>
+    <input type="text" id="telefono" placeholder="Teléfono">
+    <br>
+    <button class="btn btn-success" onclick="guardarPaciente()">Guardar</button>
+    <button class="btn btn-primary" onclick="limpiarFormulario()">Limpiar</button>
+  </div>
+
+  <!-- Tabla -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>DNI</th>
+        <th>Nombre</th>
+        <th>Apellidos</th>
+        <th>Email</th>
+        <th>Teléfono</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-pacientes"></tbody>
+  </table>
+
+  <script>
+    const API = 'http://localhost:3000/api/pacientes';
+
+    async function cargarPacientes() {
+      const res = await fetch(API);
+      const pacientes = await res.json();
+      const tbody = document.getElementById('tabla-pacientes');
+      tbody.innerHTML = '';
+      pacientes.forEach(p => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${p.id}</td>
+            <td>${p.dni}</td>
+            <td>${p.nombre}</td>
+            <td>${p.apellidos || ''}</td>
+            <td>${p.email || ''}</td>
+            <td>${p.telefono || ''}</td>
+            <td>
+              <button class="btn btn-primary" onclick="editarPaciente(${p.id})">Editar</button>
+              <button class="btn btn-danger" onclick="eliminarPaciente(${p.id})">Eliminar</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function guardarPaciente() {
+      const id = document.getElementById('paciente-id').value;
+      const datos = {
+        dni: document.getElementById('dni').value,
+        nombre: document.getElementById('nombre').value,
+        apellidos: document.getElementById('apellidos').value,
+        email: document.getElementById('email').value,
+        telefono: document.getElementById('telefono').value
+      };
+
+      if (id) {
+        await fetch(`${API}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      } else {
+        await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      }
+      limpiarFormulario();
+      cargarPacientes();
+    }
+
+    async function editarPaciente(id) {
+      const res = await fetch(`${API}/${id}`);
+      const p = await res.json();
+      document.getElementById('paciente-id').value = p.id;
+      document.getElementById('dni').value = p.dni;
+      document.getElementById('nombre').value = p.nombre;
+      document.getElementById('apellidos').value = p.apellidos || '';
+      document.getElementById('email').value = p.email || '';
+      document.getElementById('telefono').value = p.telefono || '';
+      document.getElementById('form-title').textContent = 'Editar Paciente';
+    }
+
+    async function eliminarPaciente(id) {
+      if (confirm('¿Seguro que quieres eliminar este paciente?')) {
+        await fetch(`${API}/${id}`, { method: 'DELETE' });
+        cargarPacientes();
+      }
+    }
+
+    function limpiarFormulario() {
+      document.getElementById('paciente-id').value = '';
+      document.getElementById('dni').value = '';
+      document.getElementById('nombre').value = '';
+      document.getElementById('apellidos').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('telefono').value = '';
+      document.getElementById('form-title').textContent = 'Nuevo Paciente';
+    }
+
+    cargarPacientes();
+  </script>
+</body>
+</html>

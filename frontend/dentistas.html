@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dentistas - Clínica Dental</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <a href="index.html">🦷 Clínica Dental</a>
+    <h2>👨‍⚕️ Gestión de Dentistas</h2>
+  </header>
+
+  <h1>Dentistas</h1>
+
+  <!-- Formulario -->
+  <div class="form-container">
+    <h3 id="form-title">Nuevo Dentista</h3>
+    <input type="hidden" id="dentista-id">
+    <label>Nombre</label>
+    <input type="text" id="nombre" placeholder="Nombre">
+    <label>Apellidos</label>
+    <input type="text" id="apellidos" placeholder="Apellidos">
+    <label>Especialidad</label>
+    <input type="text" id="especialidad" placeholder="Especialidad">
+    <label>Teléfono</label>
+    <input type="text" id="telefono" placeholder="Teléfono">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="Email">
+    <br>
+    <button class="btn btn-success" onclick="guardarDentista()">Guardar</button>
+    <button class="btn btn-primary" onclick="limpiarFormulario()">Limpiar</button>
+  </div>
+
+  <!-- Tabla -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Apellidos</th>
+        <th>Especialidad</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-dentistas"></tbody>
+  </table>
+
+  <script>
+    const API = 'http://localhost:3000/api/dentistas';
+
+    async function cargarDentistas() {
+      const res = await fetch(API);
+      const dentistas = await res.json();
+      const tbody = document.getElementById('tabla-dentistas');
+      tbody.innerHTML = '';
+      dentistas.forEach(d => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${d.id}</td>
+            <td>${d.nombre}</td>
+            <td>${d.apellidos || ''}</td>
+            <td>${d.especialidad}</td>
+            <td>${d.telefono || ''}</td>
+            <td>${d.email || ''}</td>
+            <td>
+              <button class="btn btn-primary" onclick="editarDentista(${d.id})">Editar</button>
+              <button class="btn btn-danger" onclick="eliminarDentista(${d.id})">Eliminar</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function guardarDentista() {
+      const id = document.getElementById('dentista-id').value;
+      const datos = {
+        nombre: document.getElementById('nombre').value,
+        apellidos: document.getElementById('apellidos').value,
+        especialidad: document.getElementById('especialidad').value,
+        telefono: document.getElementById('telefono').value,
+        email: document.getElementById('email').value
+      };
+
+      if (id) {
+        await fetch(`${API}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      } else {
+        await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      }
+      limpiarFormulario();
+      cargarDentistas();
+    }
+
+    async function editarDentista(id) {
+      const res = await fetch(`${API}/${id}`);
+      const d = await res.json();
+      document.getElementById('dentista-id').value = d.id;
+      document.getElementById('nombre').value = d.nombre;
+      document.getElementById('apellidos').value = d.apellidos || '';
+      document.getElementById('especialidad').value = d.especialidad;
+      document.getElementById('telefono').value = d.telefono || '';
+      document.getElementById('email').value = d.email || '';
+      document.getElementById('form-title').textContent = 'Editar Dentista';
+    }
+
+    async function eliminarDentista(id) {
+      if (confirm('¿Seguro que quieres eliminar este dentista?')) {
+        await fetch(`${API}/${id}`, { method: 'DELETE' });
+        cargarDentistas();
+      }
+    }
+
+    function limpiarFormulario() {
+      document.getElementById('dentista-id').value = '';
+      document.getElementById('nombre').value = '';
+      document.getElementById('apellidos').value = '';
+      document.getElementById('especialidad').value = '';
+      document.getElementById('telefono').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('form-title').textContent = 'Nuevo Dentista';
+    }
+
+    cargarDentistas();
+  </script>
+</body>
+</html>
