@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citas - Clínica Dental</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <a href="index.html">🦷 Clínica Dental</a>
+    <h2>📅 Gestión de Citas</h2>
+  </header>
+
+  <h1>Citas</h1>
+
+  <!-- Formulario -->
+  <div class="form-container">
+    <h3 id="form-title">Nueva Cita</h3>
+    <input type="hidden" id="cita-id">
+    <label>Fecha</label>
+    <input type="date" id="fecha">
+    <label>Hora</label>
+    <input type="time" id="hora">
+    <label>Motivo</label>
+    <input type="text" id="motivo" placeholder="Motivo de la cita">
+    <label>Dentista</label>
+    <select id="dentista_id"></select>
+    <label>Paciente</label>
+    <select id="paciente_id"></select>
+    <br>
+    <button class="btn btn-success" onclick="guardarCita()">Guardar</button>
+    <button class="btn btn-primary" onclick="limpiarFormulario()">Limpiar</button>
+  </div>
+
+  <!-- Tabla -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Hora</th>
+        <th>Motivo</th>
+        <th>Dentista</th>
+        <th>Paciente</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-citas"></tbody>
+  </table>
+
+  <script>
+    const API = 'http://localhost:3000/api/citas';
+    const API_DENTISTAS = 'http://localhost:3000/api/dentistas';
+    const API_PACIENTES = 'http://localhost:3000/api/pacientes';
+
+    async function cargarSelectores() {
+      const resDentistas = await fetch(API_DENTISTAS);
+      const dentistas = await resDentistas.json();
+      const selectDentista = document.getElementById('dentista_id');
+      selectDentista.innerHTML = '';
+      dentistas.forEach(d => {
+        selectDentista.innerHTML += `<option value="${d.id}">${d.nombre} ${d.apellidos || ''}</option>`;
+      });
+
+      const resPacientes = await fetch(API_PACIENTES);
+      const pacientes = await resPacientes.json();
+      const selectPaciente = document.getElementById('paciente_id');
+      selectPaciente.innerHTML = '';
+      pacientes.forEach(p => {
+        selectPaciente.innerHTML += `<option value="${p.id}">${p.nombre} ${p.apellidos || ''}</option>`;
+      });
+    }
+
+    async function cargarCitas() {
+      const res = await fetch(API);
+      const citas = await res.json();
+      const tbody = document.getElementById('tabla-citas');
+      tbody.innerHTML = '';
+      citas.forEach(c => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${c.id}</td>
+            <td>${c.fecha}</td>
+            <td>${c.hora}</td>
+            <td>${c.motivo || ''}</td>
+            <td>${c.dentista}</td>
+            <td>${c.paciente}</td>
+            <td>
+              <button class="btn btn-primary" onclick="editarCita(${c.id})">Editar</button>
+              <button class="btn btn-danger" onclick="eliminarCita(${c.id})">Eliminar</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function guardarCita() {
+      const id = document.getElementById('cita-id').value;
+      const datos = {
+        fecha: document.getElementById('fecha').value,
+        hora: document.getElementById('hora').value,
+        motivo: document.getElementById('motivo').value,
+        dentista_id: document.getElementById('dentista_id').value,
+        paciente_id: document.getElementById('paciente_id').value
+      };
+
+      if (id) {
+        await fetch(`${API}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      } else {
+        await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+      }
+      limpiarFormulario();
+      cargarCitas();
+    }
+
+    async function editarCita(id) {
+      const res = await fetch(`${API}/${id}`);
+      const c = await res.json();
+      document.getElementById('cita-id').value = c.id;
+      document.getElementById('fecha').value = c.fecha;
+      document.getElementById('hora').value = c.hora;
+      document.getElementById('motivo').value = c.motivo || '';
+      document.getElementById('dentista_id').value = c.dentista_id;
+      document.getElementById('paciente_id').value = c.paciente_id;
+      document.getElementById('form-title').textContent = 'Editar Cita';
+    }
+
+    async function eliminarCita(id) {
+      if (confirm('¿Seguro que quieres eliminar esta cita?')) {
+        await fetch(`${API}/${id}`, { method: 'DELETE' });
+        cargarCitas();
+      }
+    }
+
+    function limpiarFormulario() {
+      document.getElementById('cita-id').value = '';
+      document.getElementById('fecha').value = '';
+      document.getElementById('hora').value = '';
+      document.getElementById('motivo').value = '';
+      document.getElementById('form-title').textContent = 'Nueva Cita';
+      cargarSelectores();
+    }
+
+    cargarSelectores();
+    cargarCitas();
+  </script>
+</body>
+</html>
